@@ -68,6 +68,7 @@ class TestCLI(unittest.TestCase):
     def test_parse_defaults(self) -> None:
         args = pwgen.parse_args([])
         self.assertEqual(args.length, 16)
+        self.assertEqual(args.count, 1)
         self.assertFalse(args.no_digits)
         self.assertFalse(args.symbols)
 
@@ -111,6 +112,24 @@ class TestCLI(unittest.TestCase):
             code = pwgen.main(["-l", "8"])
         self.assertEqual(code, 0)
         self.assertEqual(len(buf.getvalue().strip()), 8)
+
+    def test_main_count_three_lines(self) -> None:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = pwgen.main(["-n", "3"])
+        self.assertEqual(code, 0)
+        lines = buf.getvalue().splitlines()
+        self.assertEqual(len(lines), 3)
+        alphabet = pwgen.build_alphabet(digits=True, symbols=False)
+        for password in lines:
+            self.assertEqual(len(password), 16)
+            for ch in password:
+                self.assertIn(ch, alphabet)
+
+    def test_parse_count_zero_exits_2(self) -> None:
+        with self.assertRaises(SystemExit) as ctx:
+            pwgen.parse_args(["--count", "0"])
+        self.assertEqual(ctx.exception.code, 2)
 
 
 if __name__ == "__main__":
