@@ -4,7 +4,7 @@ Generate one cryptographically random password to stdout (Python stdlib only).
 
 ## Requirements
 
-Python 3.10+ (stdlib only — no third-party packages).
+Python 3.10+ (stdlib only — no third-party packages). Full local: run `python pwgen.py`; no install/package.
 
 ## Usage
 
