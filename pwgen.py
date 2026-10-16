@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a cryptographically random password (stdlib only)."""
+"""Generate cryptographically random passwords (stdlib only)."""
 from __future__ import annotations
 
 import argparse
@@ -10,9 +10,9 @@ import sys
 LETTERS = string.ascii_letters
 DIGITS = string.digits
 SYMBOLS = "!@#$%^&*()-_=+[]{}|;:,.<>?"
-DEFAULT_LENGTH = 16
-MIN_LENGTH = 1
-MAX_LENGTH = 1024
+DEFAULT_LENGTH, DEFAULT_COUNT = 16, 1
+MIN_LENGTH, MAX_LENGTH = 1, 1024
+MIN_COUNT, MAX_COUNT = 1, 1000
 
 
 def build_alphabet(*, digits: bool, symbols: bool) -> str:
@@ -30,49 +30,43 @@ def generate_password(length: int, alphabet: str) -> str:
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
-def _length_type(value: str) -> int:
-    try:
-        length = int(value)
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError(f"invalid int value: {value!r}") from exc
-    if not MIN_LENGTH <= length <= MAX_LENGTH:
-        raise argparse.ArgumentTypeError(
-            f"length must be between {MIN_LENGTH} and {MAX_LENGTH}"
-        )
-    return length
+def _bounded_int(name: str, lo: int, hi: int):
+    def convert(value: str) -> int:
+        try:
+            n = int(value)
+        except ValueError as exc:
+            raise argparse.ArgumentTypeError(f"invalid int value: {value!r}") from exc
+        if not lo <= n <= hi:
+            raise argparse.ArgumentTypeError(f"{name} must be between {lo} and {hi}")
+        return n
+
+    return convert
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate a random password.")
-    parser.add_argument(
-        "-l",
-        "--length",
-        type=_length_type,
-        default=DEFAULT_LENGTH,
-        help=f"Password length (default: {DEFAULT_LENGTH}, min: {MIN_LENGTH}, max: {MAX_LENGTH})",
+    p = argparse.ArgumentParser(description="Generate random password(s).")
+    p.add_argument(
+        "-l", "--length", type=_bounded_int("length", MIN_LENGTH, MAX_LENGTH),
+        default=DEFAULT_LENGTH, help=f"length (default {DEFAULT_LENGTH})",
     )
-    parser.add_argument(
-        "--no-digits",
-        action="store_true",
-        help="Exclude digits 0-9 (digits included by default)",
+    p.add_argument(
+        "-n", "--count", type=_bounded_int("count", MIN_COUNT, MAX_COUNT),
+        default=DEFAULT_COUNT, help=f"how many (default {DEFAULT_COUNT})",
     )
-    parser.add_argument(
-        "--symbols",
-        action="store_true",
-        help="Include symbols (off by default)",
-    )
-    return parser.parse_args(argv)
+    p.add_argument("--no-digits", action="store_true", help="exclude digits")
+    p.add_argument("--symbols", action="store_true", help="include symbols")
+    return p.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     alphabet = build_alphabet(digits=not args.no_digits, symbols=args.symbols)
     try:
-        password = generate_password(args.length, alphabet)
+        for _ in range(args.count):
+            print(generate_password(args.length, alphabet))
     except ValueError as exc:
         print(exc, file=sys.stderr)
         return 2
-    print(password)
     return 0
 
 
