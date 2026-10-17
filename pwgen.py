@@ -10,17 +10,20 @@ import sys
 LETTERS = string.ascii_letters
 DIGITS = string.digits
 SYMBOLS = "!@#$%^&*()-_=+[]{}|;:,.<>?"
+AMBIGUOUS = "0Ol1I"
 DEFAULT_LENGTH, DEFAULT_COUNT = 16, 1
 MIN_LENGTH, MAX_LENGTH = 1, 1024
 MIN_COUNT, MAX_COUNT = 1, 1000
 
 
-def build_alphabet(*, digits: bool, symbols: bool) -> str:
+def build_alphabet(*, digits: bool, symbols: bool, exclude_ambiguous: bool = False) -> str:
     alphabet = LETTERS
     if digits:
         alphabet += DIGITS
     if symbols:
         alphabet += SYMBOLS
+    if exclude_ambiguous:
+        alphabet = "".join(ch for ch in alphabet if ch not in AMBIGUOUS)
     return alphabet
 
 
@@ -55,12 +58,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     p.add_argument("--no-digits", action="store_true", help="exclude digits")
     p.add_argument("--symbols", action="store_true", help="include symbols")
+    p.add_argument(
+        "--exclude-ambiguous",
+        action="store_true",
+        help="exclude ambiguous characters 0, O, l, 1, I",
+    )
     return p.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    alphabet = build_alphabet(digits=not args.no_digits, symbols=args.symbols)
+    alphabet = build_alphabet(
+        digits=not args.no_digits,
+        symbols=args.symbols,
+        exclude_ambiguous=args.exclude_ambiguous,
+    )
     try:
         for _ in range(args.count):
             print(generate_password(args.length, alphabet))
