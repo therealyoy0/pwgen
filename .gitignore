@@ -1,0 +1,40 @@
+# Bytecode / cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Packaging / build (préventif)
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Test / coverage caches (préventif si pytest/coverage ajoutés)
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# PocketTeam local artifacts (plans, reviews, audits)
+.pocketteam/
