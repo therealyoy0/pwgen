@@ -15,6 +15,8 @@ python pwgen.py -n 3
 python pwgen.py -l 24 --symbols
 python pwgen.py -l 20 --no-digits
 python pwgen.py -l 20 --no-digits --symbols
+python pwgen.py --exclude-ambiguous
+python pwgen.py -l 24 --exclude-ambiguous --symbols
 ```
 
 | Option | Default | Effect |
@@ -24,6 +26,7 @@ python pwgen.py -l 20 --no-digits --symbols
 | Letters (a–z, A–Z) | always on | Cannot be disabled |
 | Digits `0-9` | on | Disable with `--no-digits` |
 | Symbols | off | Enable with `--symbols` |
+| `--exclude-ambiguous` | off | Exclude `0`, `O`, `l`, `1`, `I` from the alphabet |
 
 Symbol set: `!@#$%^&*()-_=+[]{}|;:,.<>?`  
 With `--symbols`, quote the password if you paste it into a shell.
