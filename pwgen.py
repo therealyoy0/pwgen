@@ -30,6 +30,8 @@ def build_alphabet(*, digits: bool, symbols: bool, exclude_ambiguous: bool = Fal
 def generate_password(length: int, alphabet: str) -> str:
     if not alphabet:
         raise ValueError("alphabet must not be empty")
+    if not MIN_LENGTH <= length <= MAX_LENGTH:
+        raise ValueError(f"length must be between {MIN_LENGTH} and {MAX_LENGTH}")
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 

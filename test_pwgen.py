@@ -83,6 +83,16 @@ class TestGeneration(unittest.TestCase):
         with self.assertRaises(ValueError):
             pwgen.generate_password(8, "")
 
+    def test_generate_length_zero_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            pwgen.generate_password(0, "abc")
+        self.assertIn("length must be between", str(ctx.exception))
+
+    def test_generate_negative_length_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            pwgen.generate_password(-1, "abc")
+        self.assertIn("length must be between", str(ctx.exception))
+
     def test_generate_uses_secrets(self) -> None:
         with mock.patch("secrets.choice", return_value="x") as choice:
             password = pwgen.generate_password(5, "abc")
