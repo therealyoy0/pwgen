@@ -131,6 +131,25 @@ class TestCLI(unittest.TestCase):
             pwgen.parse_args(["--count", "0"])
         self.assertEqual(ctx.exception.code, 2)
 
+    def test_parse_count_negative_exits_2(self) -> None:
+        with self.assertRaises(SystemExit) as ctx:
+            pwgen.parse_args(["--count=-1"])
+        self.assertEqual(ctx.exception.code, 2)
+
+    def test_parse_count_long_form(self) -> None:
+        args = pwgen.parse_args(["--count", "5"])
+        self.assertEqual(args.count, 5)
+
+    def test_parse_count_too_large_exits_2(self) -> None:
+        with self.assertRaises(SystemExit) as ctx:
+            pwgen.parse_args(["-n", "1001"])
+        self.assertEqual(ctx.exception.code, 2)
+
+    def test_parse_count_non_int_exits_2(self) -> None:
+        with self.assertRaises(SystemExit) as ctx:
+            pwgen.parse_args(["--count", "abc"])
+        self.assertEqual(ctx.exception.code, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
