@@ -40,6 +40,32 @@ class TestAlphabet(unittest.TestCase):
         for ch in string.ascii_letters + pwgen.SYMBOLS:
             self.assertIn(ch, alphabet)
 
+    def test_ambiguous_constant(self) -> None:
+        self.assertEqual(set(pwgen.AMBIGUOUS), {"0", "O", "l", "1", "I"})
+
+    def test_alphabet_exclude_ambiguous_default_charset(self) -> None:
+        alphabet = pwgen.build_alphabet(digits=True, symbols=False, exclude_ambiguous=True)
+        for ch in pwgen.AMBIGUOUS:
+            self.assertNotIn(ch, alphabet)
+        for ch in ("a", "A", "2", "9"):
+            self.assertIn(ch, alphabet)
+
+    def test_alphabet_exclude_ambiguous_with_symbols(self) -> None:
+        alphabet = pwgen.build_alphabet(digits=True, symbols=True, exclude_ambiguous=True)
+        for ch in pwgen.AMBIGUOUS:
+            self.assertNotIn(ch, alphabet)
+        for ch in pwgen.SYMBOLS:
+            self.assertIn(ch, alphabet)
+
+    def test_alphabet_exclude_ambiguous_no_digits(self) -> None:
+        alphabet = pwgen.build_alphabet(digits=False, symbols=False, exclude_ambiguous=True)
+        for ch in string.digits:
+            self.assertNotIn(ch, alphabet)
+        for ch in ("O", "l", "I"):
+            self.assertNotIn(ch, alphabet)
+        for ch in ("a", "A", "o", "L", "i"):
+            self.assertIn(ch, alphabet)
+
 
 class TestGeneration(unittest.TestCase):
     def test_generate_length(self) -> None:
@@ -57,11 +83,27 @@ class TestGeneration(unittest.TestCase):
         with self.assertRaises(ValueError):
             pwgen.generate_password(8, "")
 
+    def test_generate_length_zero_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            pwgen.generate_password(0, "abc")
+        self.assertIn("length must be between", str(ctx.exception))
+
+    def test_generate_negative_length_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            pwgen.generate_password(-1, "abc")
+        self.assertIn("length must be between", str(ctx.exception))
+
     def test_generate_uses_secrets(self) -> None:
         with mock.patch("secrets.choice", return_value="x") as choice:
             password = pwgen.generate_password(5, "abc")
         self.assertEqual(password, "xxxxx")
         self.assertEqual(choice.call_count, 5)
+
+    def test_generate_excludes_ambiguous_chars(self) -> None:
+        alphabet = pwgen.build_alphabet(digits=True, symbols=True, exclude_ambiguous=True)
+        password = pwgen.generate_password(256, alphabet)
+        for ch in pwgen.AMBIGUOUS:
+            self.assertNotIn(ch, password)
 
 
 class TestCLI(unittest.TestCase):
@@ -71,6 +113,7 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(args.count, 1)
         self.assertFalse(args.no_digits)
         self.assertFalse(args.symbols)
+        self.assertFalse(args.exclude_ambiguous)
 
     def test_parse_length_and_flags(self) -> None:
         args = pwgen.parse_args(["-l", "24", "--symbols", "--no-digits"])
@@ -130,6 +173,37 @@ class TestCLI(unittest.TestCase):
         with self.assertRaises(SystemExit) as ctx:
             pwgen.parse_args(["--count", "0"])
         self.assertEqual(ctx.exception.code, 2)
+
+    def test_parse_exclude_ambiguous_flag(self) -> None:
+        args = pwgen.parse_args(["--exclude-ambiguous"])
+        self.assertTrue(args.exclude_ambiguous)
+
+    def test_main_exclude_ambiguous(self) -> None:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = pwgen.main(["--exclude-ambiguous", "-l", "64"])
+        self.assertEqual(code, 0)
+        password = buf.getvalue().strip()
+        self.assertEqual(len(password), 64)
+        for ch in pwgen.AMBIGUOUS:
+            self.assertNotIn(ch, password)
+
+    def test_main_exclude_ambiguous_combo(self) -> None:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = pwgen.main(
+                ["--exclude-ambiguous", "--no-digits", "--symbols", "-l", "32"]
+            )
+        self.assertEqual(code, 0)
+        password = buf.getvalue().strip()
+        self.assertEqual(len(password), 32)
+        expected = pwgen.build_alphabet(
+            digits=False, symbols=True, exclude_ambiguous=True
+        )
+        for ch in password:
+            self.assertIn(ch, expected)
+        for ch in pwgen.AMBIGUOUS:
+            self.assertNotIn(ch, password)
 
 
 if __name__ == "__main__":
